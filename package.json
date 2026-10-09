@@ -7,11 +7,18 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "netlify database migrations apply"
   },
   "dependencies": {
+    "@netlify/database": "^2.0.1",
+    "@netlify/functions": "^6.0.2",
+    "@netlify/identity": "^2.0.0",
+    "@netlify/vite-plugin": "^3.0.1",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^1.0.0-beta.22",
     "framer-motion": "^14.0.0",
     "lucide-react": "^1.53.0",
     "react": "^19.2.8",
@@ -27,6 +34,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.6.1",
+    "drizzle-kit": "^1.0.0-beta.22",
     "oxlint": "^1.81.0",
     "postcss": "^8.5.29",
     "tailwindcss": "^3.4.19",

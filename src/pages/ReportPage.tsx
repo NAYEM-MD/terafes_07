@@ -95,7 +95,7 @@ export const ReportPage: React.FC = () => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/discover')}
+            onClick={() => navigate('/aimentor')}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 text-xs font-mono transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -316,7 +316,7 @@ export const ReportPage: React.FC = () => {
             Recommended Parallel Target Pipeline
           </h3>
           <NavLink
-            to="/discover"
+            to="/aimentor"
             className="text-xs font-mono text-red-400 hover:text-red-300 flex items-center gap-1"
           >
             <span>View All Matches</span>

@@ -1,8 +1,7 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
-  User,
   Compass,
   Bot,
   BarChart3,
@@ -11,6 +10,7 @@ import {
   Sparkles,
   ChevronRight,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
 import { MonEmblem } from '../common/MonEmblem';
 import { KanjiBadge } from '../common/KanjiBadge';
@@ -22,7 +22,8 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
-  const { user, goalMode } = useApp();
+  const navigate = useNavigate();
+  const { user, goalMode, isAccount, onboardingCompleted, signOut, addToast } = useApp();
 
   const navLinks = [
     {
@@ -33,22 +34,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
       badge: '92%',
     },
     {
-      to: '/profile',
-      label: 'My Profile',
-      sublabel: 'Identity & Mastery',
-      icon: User,
-    },
-    {
-      to: '/discover',
-      label: 'Discover',
-      sublabel: goalMode === 'job' ? 'Careers & Roles' : 'Universities',
+      to: '/aimentor',
+      label: 'AiMentor',
+      sublabel: 'Job Opportunities',
       icon: Compass,
       badge: '24',
     },
     {
       to: '/mentor',
-      label: 'AI Mentor',
-      sublabel: 'Live Avatar Interview',
+      label: 'AI Interview',
+      sublabel: 'Live Interview',
       icon: Bot,
       highlight: true,
     },
@@ -195,22 +190,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
 
         {/* Bottom Section: Settings & User Identity */}
         <div className="p-4 border-t border-white/5 space-y-3">
-          <NavLink
-            to="/onboarding"
-            onClick={onCloseMobile}
-            className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/5"
-          >
-            <div className="flex items-center gap-2">
-              <Settings className="w-4 h-4 text-gray-400" />
-              <span>Recalibrate Path Wizard</span>
-            </div>
-            <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
-          </NavLink>
+          {!onboardingCompleted && (
+            <NavLink
+              to={isAccount ? '/onboarding' : '/login?intent=journey'}
+              onClick={onCloseMobile}
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors border border-white/5"
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-gray-400" />
+                <span>{isAccount ? 'Continue onboarding' : 'Start your journey'}</span>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+            </NavLink>
+          )}
 
           {/* User Profile Mini Card */}
           <NavLink
             to="/profile"
             onClick={onCloseMobile}
+            aria-label="Open profile"
             className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all group"
           >
             <div className="relative">
@@ -221,16 +219,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
             </div>
             <div className="flex-1 text-left min-w-0">
               <div className="text-xs font-semibold text-white truncate group-hover:text-red-400 transition-colors">
-                {user?.name || 'Thushan'}
+                {user?.name || (isAccount ? 'Your profile' : 'Sample preview')}
               </div>
               <div className="text-[10px] font-mono text-gray-400 truncate">
-                {user?.educationLevel || 'IT Vocational Student'}
+                {isAccount ? user?.educationLevel || 'Account profile' : 'Sample preview'}
               </div>
             </div>
             <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/20">
               92%
             </span>
           </NavLink>
+          {isAccount && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await signOut();
+                  onCloseMobile?.();
+                  navigate('/');
+                } catch (error) {
+                  addToast(error instanceof Error ? error.message : 'Sign out failed', 'error');
+                }
+              }}
+              className="w-full min-h-11 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/5 border border-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          )}
         </div>
       </aside>
     </>

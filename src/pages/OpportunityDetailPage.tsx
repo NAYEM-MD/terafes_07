@@ -63,7 +63,7 @@ export const OpportunityDetailPage: React.FC = () => {
       <div className="py-20 text-center space-y-4">
         <div className="text-xl font-bold text-white">Target Opportunity Not Found</div>
         <NavLink
-          to="/discover"
+          to="/aimentor"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold"
         >
           Return to Radar
@@ -86,11 +86,11 @@ export const OpportunityDetailPage: React.FC = () => {
       {/* Top Back Navigation Bar */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => navigate('/discover')}
+          onClick={() => navigate('/aimentor')}
           className="flex items-center gap-2 text-xs font-mono text-gray-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>RETURN TO DISCOVERY RADAR</span>
+          <span>RETURN TO AIMENTOR</span>
         </button>
 
         <div className="flex items-center gap-3">

@@ -118,7 +118,7 @@ export const InterviewAnalysisPage: React.FC = () => {
         <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
           <div className="text-xs font-mono text-gray-400 flex items-center gap-2">
             <Bot className="w-4 h-4 text-amber-400" />
-            <span>AI Mentor Musashi evaluation complete across 10 technical competency modules</span>
+            <span>AI Interview evaluation complete across 10 technical competency modules</span>
           </div>
 
           <button

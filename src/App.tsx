@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import { AuthCallbackRedirect } from './components/auth/AuthCallbackRedirect';
 import { AppLayout } from './components/layout/AppLayout';
 import { LandingPage } from './pages/LandingPage';
+import { GuestChatPage } from './pages/GuestChatPage';
+import { AuthPage } from './pages/AuthPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DiscoverPage } from './pages/DiscoverPage';
@@ -15,9 +18,11 @@ export function App() {
   return (
     <BrowserRouter>
       <AppProvider>
+        <AuthCallbackRedirect />
         <Routes>
-          {/* Landing Page without dashboard sidebar */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<GuestChatPage />} />
+          <Route path="/welcome" element={<LandingPage />} />
+          <Route path="/login" element={<AuthPage />} />
 
           {/* Onboarding Wizard */}
           <Route path="/onboarding" element={<OnboardingPage />} />
@@ -25,7 +30,8 @@ export function App() {
           {/* Main App Layout with Left Sidebar, Top Bar, and Transitions */}
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/discover" element={<Navigate to="/aimentor" replace />} />
+            <Route path="/aimentor" element={<DiscoverPage />} />
             <Route path="/opportunity/:id" element={<OpportunityDetailPage />} />
             <Route path="/mentor" element={<MentorInterviewPage />} />
             <Route path="/analysis" element={<InterviewAnalysisPage />} />

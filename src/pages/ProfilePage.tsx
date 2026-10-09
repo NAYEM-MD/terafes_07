@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
   User,
@@ -22,7 +23,7 @@ import { KanjiBadge } from '../components/common/KanjiBadge';
 import { SkillItem, SkillLevel, LanguageItem } from '../types/user';
 
 export const ProfilePage: React.FC = () => {
-  const { user, updateUser, addToast } = useApp();
+  const { user, updateUser, addToast, isAccount, isLoadingUser } = useApp();
 
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
   const [personalForm, setPersonalForm] = useState({
@@ -49,7 +50,41 @@ export const ProfilePage: React.FC = () => {
   const [newLangName, setNewLangName] = useState('');
   const [newLangCert, setNewLangCert] = useState('');
 
-  if (!user) return null;
+  useEffect(() => {
+    if (!user || isEditingPersonal) return;
+    setPersonalForm({
+      name: user.name,
+      age: user.age,
+      country: user.country,
+      currentLocation: user.currentLocation,
+    });
+  }, [user, isEditingPersonal]);
+
+  useEffect(() => {
+    if (!user || isEditingEdu) return;
+    setEduForm({
+      currentSchool: user.currentSchool,
+      educationLevel: user.educationLevel,
+      major: user.major,
+      graduationYear: user.graduationYear,
+      expectedGraduationDate: user.expectedGraduationDate,
+    });
+  }, [user, isEditingEdu]);
+
+  if (isLoadingUser) {
+    return <div className="py-20 text-center font-mono text-gray-400">Loading profile...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="py-16 text-center space-y-4">
+        <h1 className="text-xl font-bold text-white">No saved profile yet</h1>
+        <NavLink to="/onboarding" className="inline-flex min-h-11 items-center px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-bold">
+          Continue onboarding
+        </NavLink>
+      </div>
+    );
+  }
 
   const handleSavePersonal = async () => {
     await updateUser({
@@ -123,7 +158,7 @@ export const ProfilePage: React.FC = () => {
                 <KanjiBadge kanji="武士録" subtext="Candidate Dossier" variant="crimson" />
                 <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  VERIFIED PROFILE
+                  {isAccount ? 'SAVED TO YOUR ACCOUNT' : 'SAMPLE PREVIEW'}
                 </span>
               </div>
               <h1 className="font-display font-black text-2xl sm:text-3xl text-white">

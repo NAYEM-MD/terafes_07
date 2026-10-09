@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { mergeProfile, validateOnboardingProfile, validateOnboardingStep } from '../lib/accountProfile';
+import { AccountApiError } from '../services/accountApi';
 import {
   User,
   GraduationCap,
@@ -19,53 +21,140 @@ import {
 } from 'lucide-react';
 import { MonEmblem } from '../components/common/MonEmblem';
 import { KanjiBadge } from '../components/common/KanjiBadge';
-import { SkillLevel, SkillItem, LanguageItem, GoalMode } from '../types/user';
+import { SkillLevel, SkillItem, LanguageItem, ExperienceItem, GoalMode, UserProfile } from '../types/user';
 
 export const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, updateUser, setGoalMode, addToast } = useApp();
+  const {
+    authReady,
+    authUser,
+    isLoadingUser,
+    accountProfile,
+    onboardingCompleted,
+    saveAccountProfile,
+    addToast,
+  } = useApp();
 
-  const initialMode = (searchParams.get('mode') as GoalMode) || user?.goal?.mode || 'job';
+  const hydrated = useRef(false);
+  const saveLock = useRef(false);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
 
   // Step state (1 to 6)
   const [currentStep, setCurrentStep] = useState<number>(1);
+  const [formReady, setFormReady] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Form State initialized from mock user
   const [personal, setPersonal] = useState({
-    name: user?.name || 'Thushan',
-    age: user?.age || 22,
-    country: user?.country || 'Sri Lanka',
-    currentLocation: user?.currentLocation || 'Tokyo, Japan',
+    name: '',
+    age: 0,
+    country: '',
+    currentLocation: '',
   });
 
   const [education, setEducation] = useState({
-    currentSchool: user?.currentSchool || 'Tokyo Information Technology College',
-    educationLevel: user?.educationLevel || 'IT Vocational Degree (専門士)',
-    major: user?.major || 'Advanced Software Engineering & Cloud Infrastructure',
-    graduationYear: user?.graduationYear || 2027,
-    expectedGraduationDate: user?.expectedGraduationDate || 'March 2027',
+    currentSchool: '',
+    educationLevel: '',
+    major: '',
+    graduationYear: new Date().getFullYear(),
+    expectedGraduationDate: '',
   });
 
-  const [skills, setSkills] = useState<SkillItem[]>(user?.skills || []);
+  const [skills, setSkills] = useState<SkillItem[]>([]);
   const [newSkillName, setNewSkillName] = useState('');
   const [newSkillLevel, setNewSkillLevel] = useState<SkillLevel>('Intermediate');
 
-  const [languages, setLanguages] = useState<LanguageItem[]>(user?.languages || []);
-  const [newLang, setNewLang] = useState({ language: 'Japanese', certification: 'JLPT N2', proficiency: 'Professional' as const });
+  const [languages, setLanguages] = useState<LanguageItem[]>([]);
+  const [newLang, setNewLang] = useState({ language: '', certification: '', proficiency: 'Professional' as const });
 
-  const [resumeUploaded, setResumeUploaded] = useState(true);
-  const [resumeName, setResumeName] = useState(user?.resumeFileName || 'Thushan_Resume_SoftwareEngineer_JP_EN.pdf');
-
-  const [goal, setGoal] = useState({
-    mode: initialMode,
-    desiredRole: user?.goal?.desiredRole || 'Java Backend Engineer / System Engineer',
-    preferredLocation: user?.goal?.preferredLocation || 'Tokyo, Japan',
-    preferredIndustry: user?.goal?.preferredIndustry || 'Fintech & Enterprise Cloud Services',
-    desiredField: user?.goal?.desiredField || 'Computer Science & Distributed Systems',
-    degreeLevel: user?.goal?.degreeLevel || ('Master' as const),
-    languagePreference: user?.goal?.languagePreference || ('Bilingual' as const),
+  const [experiences, setExperiences] = useState<ExperienceItem[]>([]);
+  const [newExperience, setNewExperience] = useState({
+    title: '',
+    type: 'Project' as ExperienceItem['type'],
+    description: '',
   });
+
+  const [resumeUploaded, setResumeUploaded] = useState(false);
+  const [resumeName, setResumeName] = useState('');
+
+  const [goal, setGoal] = useState<{
+    mode: GoalMode;
+    desiredRole: string;
+    preferredLocation: string;
+    preferredIndustry: string;
+    desiredField: string;
+    degreeLevel: NonNullable<UserProfile['goal']['degreeLevel']>;
+    languagePreference: NonNullable<UserProfile['goal']['languagePreference']>;
+  }>({
+    mode: 'job',
+    desiredRole: '',
+    preferredLocation: '',
+    preferredIndustry: '',
+    desiredField: '',
+    degreeLevel: 'Bachelor',
+    languagePreference: 'Bilingual',
+  });
+
+  const requestedMode = searchParams.get('mode');
+  const loginTarget = `/login?intent=journey${
+    requestedMode === 'job' || requestedMode === 'university' ? `&mode=${requestedMode}` : ''
+  }`;
+
+  useEffect(() => {
+    if (!authReady || isLoadingUser || hydrated.current) return;
+    if (!authUser) {
+      navigate(loginTarget, { replace: true });
+      return;
+    }
+    if (onboardingCompleted) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    const source = accountProfile;
+    const mode =
+      requestedMode === 'job' || requestedMode === 'university'
+        ? requestedMode
+        : source?.goal.mode || 'job';
+    setPersonal({
+      name: source?.name || '',
+      age: source?.age || 0,
+      country: source?.country || '',
+      currentLocation: source?.currentLocation || '',
+    });
+    setEducation({
+      currentSchool: source?.currentSchool || '',
+      educationLevel: source?.educationLevel || '',
+      major: source?.major || '',
+      graduationYear: source?.graduationYear || new Date().getFullYear(),
+      expectedGraduationDate: source?.expectedGraduationDate || '',
+    });
+    setSkills(source?.skills || []);
+    setLanguages(source?.languages || []);
+    setExperiences(source?.experiences || []);
+    setResumeUploaded(Boolean(source?.resumeFileName));
+    setResumeName(source?.resumeFileName || '');
+    setGoal({
+      mode,
+      desiredRole: source?.goal.desiredRole || '',
+      preferredLocation: source?.goal.preferredLocation || '',
+      preferredIndustry: source?.goal.preferredIndustry || '',
+      desiredField: source?.goal.desiredField || '',
+      degreeLevel: source?.goal.degreeLevel || 'Bachelor',
+      languagePreference: source?.goal.languagePreference || 'Bilingual',
+    });
+    hydrated.current = true;
+    setFormReady(true);
+  }, [
+    authReady,
+    isLoadingUser,
+    authUser,
+    onboardingCompleted,
+    accountProfile,
+    navigate,
+    loginTarget,
+    requestedMode,
+  ]);
 
   const stepTitles = [
     { num: 1, label: 'Personal', icon: User, kanji: '本人' },
@@ -106,35 +195,118 @@ export const OnboardingPage: React.FC = () => {
     setLanguages(languages.filter((l) => l.id !== id));
   };
 
-  const handleCompleteOnboarding = async () => {
-    await updateUser({
-      name: personal.name,
+  const buildProfile = (): UserProfile => {
+    return mergeProfile(authUser?.id || 'pending', accountProfile, {
+      name: personal.name.trim(),
       age: Number(personal.age),
-      country: personal.country,
-      currentLocation: personal.currentLocation,
-      currentSchool: education.currentSchool,
-      educationLevel: education.educationLevel,
-      major: education.major,
+      country: personal.country.trim(),
+      currentLocation: personal.currentLocation.trim(),
+      currentSchool: education.currentSchool.trim(),
+      educationLevel: education.educationLevel.trim(),
+      major: education.major.trim(),
       graduationYear: Number(education.graduationYear),
-      expectedGraduationDate: education.expectedGraduationDate,
+      expectedGraduationDate: education.expectedGraduationDate.trim(),
       skills,
       languages,
-      resumeFileName: resumeName,
+      experiences,
+      resumeFileName: resumeUploaded ? resumeName : undefined,
       goal: {
         mode: goal.mode,
-        desiredRole: goal.desiredRole,
-        preferredLocation: goal.preferredLocation,
-        preferredIndustry: goal.preferredIndustry,
-        desiredField: goal.desiredField,
+        desiredRole: goal.desiredRole.trim(),
+        preferredLocation: goal.preferredLocation.trim(),
+        preferredIndustry: goal.preferredIndustry.trim(),
+        desiredField: goal.desiredField.trim(),
         degreeLevel: goal.degreeLevel,
         languagePreference: goal.languagePreference,
       },
     });
-
-    setGoalMode(goal.mode);
-    addToast('Profile calibrated successfully! Welcome to Ronin Command Center.', 'success');
-    navigate('/dashboard');
   };
+
+  const persistDraft = async (profile: UserProfile) => {
+    if (saveLock.current) return false;
+    saveLock.current = true;
+    setSaving(true);
+    try {
+      const saved = await saveAccountProfile(profile, false);
+      if (saved.onboardingCompleted) {
+        navigate('/dashboard', { replace: true });
+      }
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof AccountApiError
+          ? error.message
+          : 'Could not save your progress. You are still on this step.';
+      addToast(message, 'error');
+      return false;
+    } finally {
+      saveLock.current = false;
+      setSaving(false);
+    }
+  };
+
+  const handleContinue = async () => {
+    const profile = buildProfile();
+    const stepError = validateOnboardingStep(currentStep, profile);
+    if (stepError) {
+      addToast(stepError, 'warning');
+      return;
+    }
+    const saved = await persistDraft(profile);
+    if (saved) setCurrentStep((step) => Math.min(step + 1, 6));
+  };
+
+  const handleAddExperience = () => {
+    if (!newExperience.title.trim()) return;
+    const item: ExperienceItem = {
+      id: 'exp-' + Date.now(),
+      type: newExperience.type,
+      title: newExperience.title.trim(),
+      description: newExperience.description.trim(),
+      startDate: new Date().toISOString().slice(0, 7),
+    };
+    setExperiences([...experiences, item]);
+    setNewExperience({ title: '', type: 'Project', description: '' });
+  };
+
+  const handleCompleteOnboarding = async () => {
+    if (saveLock.current) return;
+    const profile = buildProfile();
+    const errors = validateOnboardingProfile(profile);
+    if (errors.length > 0) {
+      addToast(errors[0], 'warning');
+      return;
+    }
+
+    saveLock.current = true;
+    setSaving(true);
+    try {
+      const saved = await saveAccountProfile(profile, true);
+      if (!saved.onboardingCompleted) {
+        addToast('Onboarding was not marked complete. Your dashboard was not opened.', 'error');
+        return;
+      }
+      addToast('Profile saved. Welcome to your dashboard.', 'success');
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      const message =
+        error instanceof AccountApiError
+          ? error.message
+          : 'Could not save your profile. Onboarding is still incomplete.';
+      addToast(message, 'error');
+    } finally {
+      saveLock.current = false;
+      setSaving(false);
+    }
+  };
+
+  if (!formReady) {
+    return (
+      <div className="min-h-screen bg-[#090A0F] text-gray-100 flex items-center justify-center font-mono text-sm text-gray-300">
+        Checking your account...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#090A0F] text-gray-100 flex flex-col py-8 px-4 sm:px-6 lg:px-8 relative selection:bg-red-600">
@@ -159,13 +331,16 @@ export const OnboardingPage: React.FC = () => {
       <div className="max-w-4xl mx-auto w-full my-8 relative z-10">
         <div className="grid grid-cols-6 gap-2">
           {stepTitles.map((step) => {
-            const Icon = step.icon;
             const isCompleted = currentStep > step.num;
             const isCurrent = currentStep === step.num;
             return (
               <button
                 key={step.num}
-                onClick={() => setCurrentStep(step.num)}
+                type="button"
+                disabled={step.num > currentStep}
+                onClick={() => {
+                  if (step.num <= currentStep) setCurrentStep(step.num);
+                }}
                 className={`flex flex-col items-center text-center p-2 rounded-xl transition-all border ${
                   isCurrent
                     ? 'bg-red-950/40 border-red-500/50 text-white shadow-lg shadow-red-950/50'
@@ -225,7 +400,7 @@ export const OnboardingPage: React.FC = () => {
                     value={personal.name}
                     onChange={(e) => setPersonal({ ...personal, name: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-red-500 font-sans text-sm"
-                    placeholder="e.g. Thushan Silva"
+                    placeholder="Your name"
                   />
                 </div>
 
@@ -547,66 +722,112 @@ export const OnboardingPage: React.FC = () => {
                   Experience & Resume Upload
                 </h2>
                 <p className="text-xs text-gray-400 mt-1">
-                  Upload your CV or portfolio dossier to enable automatic RAG evidence extraction.
+                  Add the experiences that belong to this account. The resume file name is stored with your profile; the file itself stays on this device.
                 </p>
               </div>
 
-              {/* Resume Upload Dropzone UI (Visual Only) */}
-              <div
-                onClick={() => setResumeUploaded(true)}
-                className="border-2 border-dashed border-red-500/30 hover:border-red-500/60 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-white/[0.02] hover:bg-red-950/10 transition-all cursor-pointer group"
+              <input
+                ref={resumeInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.md,application/pdf"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 15 * 1024 * 1024) {
+                    addToast('Choose a file that is 15MB or smaller.', 'warning');
+                    return;
+                  }
+                  setResumeName(file.name);
+                  setResumeUploaded(true);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => resumeInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-red-500/30 hover:border-red-500/60 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-white/[0.02] hover:bg-red-950/10 transition-all group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
               >
                 <div className="w-14 h-14 rounded-2xl bg-red-600/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-3 group-hover:scale-105 transition-transform">
                   <Upload className="w-7 h-7" />
                 </div>
                 <div className="text-sm font-bold text-white">
-                  Drag and drop your Resume / Portfolio PDF
+                  Choose a resume or portfolio file
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  Supports PDF, DOCX, or Markdown up to 15MB
+                  PDF, DOCX, or Markdown up to 15MB
                 </div>
 
                 {resumeUploaded && (
                   <div className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
                     <FileText className="w-4 h-4" />
-                    <span>Attached: {resumeName}</span>
+                    <span>File name saved: {resumeName}</span>
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 ml-1" />
                   </div>
                 )}
-              </div>
+              </button>
 
-              {/* Preloaded Projects and Experiences */}
               <div className="space-y-3">
                 <label className="block text-xs font-mono text-gray-400 uppercase">
-                  ACTIVE EXPERIENCES & CAPSTONES
+                  Experiences
                 </label>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">
-                      Distributed Inventory & Order Gateway
-                    </span>
-                    <span className="text-[10px] font-mono text-red-400 bg-red-950/40 px-2 py-0.5 rounded border border-red-500/20">
-                      Capstone Project
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    Spring Boot, PostgreSQL pessimistic locking, Redis cache, and Docker multi-tier deployment.
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <input
+                    type="text"
+                    value={newExperience.title}
+                    onChange={(event) => setNewExperience({ ...newExperience, title: event.target.value })}
+                    placeholder="Title"
+                    className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-red-500"
+                  />
+                  <select
+                    value={newExperience.type}
+                    onChange={(event) =>
+                      setNewExperience({
+                        ...newExperience,
+                        type: event.target.value as ExperienceItem['type'],
+                      })
+                    }
+                    className="px-4 py-2.5 rounded-xl bg-[#141722] border border-white/10 text-white text-xs font-mono"
+                  >
+                    <option value="Project">Project</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Certification">Certification</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddExperience}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-wider"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add
+                  </button>
                 </div>
-
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">
-                      Oracle Certified Professional: Java SE 17 Developer
-                    </span>
-                    <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/20">
-                      Certification
-                    </span>
+                <textarea
+                  value={newExperience.description}
+                  onChange={(event) => setNewExperience({ ...newExperience, description: event.target.value })}
+                  placeholder="What did you build or learn?"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-red-500"
+                />
+                {experiences.length === 0 && (
+                  <p className="text-xs text-gray-500">No experiences added yet. This step can be left empty.</p>
+                )}
+                {experiences.map((experience) => (
+                  <div key={experience.id} className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-white">{experience.title}</span>
+                      <button
+                        type="button"
+                        onClick={() => setExperiences(experiences.filter((item) => item.id !== experience.id))}
+                        className="text-gray-500 hover:text-red-400"
+                        aria-label={`Remove ${experience.title}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400">{experience.type}</p>
+                    {experience.description && <p className="text-xs text-gray-300">{experience.description}</p>}
                   </div>
-                  <p className="text-xs text-gray-400">
-                    Demonstrated mastery of Java concurrency, memory management, and stream APIs.
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           )}
@@ -770,20 +991,22 @@ export const OnboardingPage: React.FC = () => {
             {currentStep < 6 ? (
               <button
                 type="button"
-                onClick={() => setCurrentStep(currentStep + 1)}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-red-600/30"
+                onClick={handleContinue}
+                disabled={saving}
+                className="flex items-center gap-2 min-h-11 px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-red-600/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
               >
-                <span>Continue</span>
+                <span>{saving ? 'Saving...' : 'Continue'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleCompleteOnboarding}
-                className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs font-bold uppercase tracking-widest transition-all shadow-xl shadow-red-600/40 animate-pulse-slow"
+                disabled={saving}
+                className="flex items-center gap-2 min-h-12 px-8 py-3.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 disabled:opacity-60 text-white text-xs font-bold uppercase tracking-widest transition-all shadow-xl shadow-red-600/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Analyze My Path</span>
+                <span>{saving ? 'Saving profile...' : 'Analyze My Path'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}

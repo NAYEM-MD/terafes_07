@@ -5,8 +5,6 @@ import {
   Bell,
   Menu,
   Sparkles,
-  Briefcase,
-  GraduationCap,
   CheckCircle,
   Clock,
   X,
@@ -19,19 +17,19 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ onToggleMobileSidebar }) => {
   const location = useLocation();
-  const { user, goalMode, setGoalMode } = useApp();
+  const { user } = useApp();
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Map route path to readable title and Japanese badge
   const pageMetadata: Record<string, { title: string; kanji: string; sub: string }> = {
     '/dashboard': { title: 'DASHBOARD OVERVIEW', kanji: '司令部', sub: 'Command Center' },
     '/profile': { title: 'CANDIDATE DOSSIER', kanji: '武士録', sub: 'Verified Credentials' },
-    '/discover': {
-      title: goalMode === 'job' ? 'CAREER DISCOVERY RADAR' : 'ACADEMIC PATHWAY DISCOVERY',
+    '/aimentor': {
+      title: 'AIMENTOR',
       kanji: '探索',
-      sub: 'Algorithmic Matching',
+      sub: 'Job Opportunities',
     },
-    '/mentor': { title: 'AI MENTOR SANCTUARY', kanji: '道場', sub: 'Live Avatar Interview' },
+    '/mentor': { title: 'AI INTERVIEW', kanji: '道場', sub: 'Live Interview' },
     '/analysis': { title: 'READINESS ANALYSIS', kanji: '診断', sub: 'Vector Gap Breakdown' },
     '/report': { title: '30-DAY STRATEGY REPORT', kanji: '指南書', sub: 'Action Roadmap' },
     '/onboarding': { title: 'ONBOARDING PROTOCOL', kanji: '入門', sub: 'Profile Calibration' },
@@ -94,32 +92,6 @@ export const TopBar: React.FC<TopBarProps> = ({ onToggleMobileSidebar }) => {
 
       {/* Right: Path Mode Switcher, Notifications, User Avatar */}
       <div className="flex items-center gap-3">
-        {/* Quick Goal Mode Switcher */}
-        <div className="hidden md:flex items-center p-1 rounded-xl bg-white/[0.04] border border-white/10">
-          <button
-            onClick={() => setGoalMode('job')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-              goalMode === 'job'
-                ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Briefcase className="w-3.5 h-3.5" />
-            <span>Job Mode</span>
-          </button>
-          <button
-            onClick={() => setGoalMode('university')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-              goalMode === 'university'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <GraduationCap className="w-3.5 h-3.5" />
-            <span>University Mode</span>
-          </button>
-        </div>
-
         {/* Readiness Pill */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

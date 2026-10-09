@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { roninApi } from '../services/api';
 import { Opportunity, MatchTier } from '../types/opportunity';
@@ -11,7 +11,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Briefcase,
-  GraduationCap,
+  User,
   Sparkles,
   MapPin,
   Building,
@@ -20,7 +20,7 @@ import { KanjiBadge } from '../components/common/KanjiBadge';
 
 export const DiscoverPage: React.FC = () => {
   const navigate = useNavigate();
-  const { goalMode, setGoalMode, setSelectedOpportunityId, toggleSaveOpportunity, savedOpportunityIds } = useApp();
+  const { setSelectedOpportunityId, toggleSaveOpportunity, savedOpportunityIds } = useApp();
 
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -37,7 +37,7 @@ export const DiscoverPage: React.FC = () => {
     async function fetchOpportunities() {
       setLoading(true);
       const data = await roninApi.searchOpportunities({
-        type: goalMode,
+        type: 'job',
         searchTerm,
         matchTier: activeTab,
         location: locationFilter,
@@ -48,7 +48,7 @@ export const DiscoverPage: React.FC = () => {
       setLoading(false);
     }
     fetchOpportunities();
-  }, [goalMode, searchTerm, activeTab, locationFilter, skillFilter, minMatch]);
+  }, [searchTerm, activeTab, locationFilter, skillFilter, minMatch]);
 
   const handleSelectOpportunity = (id: string) => {
     setSelectedOpportunityId(id);
@@ -69,40 +69,28 @@ export const DiscoverPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <KanjiBadge kanji="機軸探索" subtext="RAG Discovery" variant="crimson" />
+            <KanjiBadge kanji="機軸探索" subtext="Job Radar" variant="crimson" />
             <h1 className="font-display font-black text-2xl sm:text-3xl text-white">
-              {goalMode === 'job' ? 'Career Opportunity Radar' : 'Academic Pathway Radar'}
+              AiMentor
             </h1>
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            Algorithmic semantic matching evaluating Tokyo tech positions and national university graduate programs.
+            Job opportunities matched to your background. AI Interview stays a separate live practice session.
           </p>
         </div>
 
-        {/* Path Mode Toggle */}
         <div className="flex items-center p-1 rounded-2xl bg-white/[0.04] border border-white/10 self-start sm:self-auto">
-          <button
-            onClick={() => setGoalMode('job')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              goalMode === 'job'
-                ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white shadow-md shadow-red-600/30">
             <Briefcase className="w-3.5 h-3.5" />
             <span>Job Opportunities</span>
-          </button>
-          <button
-            onClick={() => setGoalMode('university')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              goalMode === 'university'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
-                : 'text-gray-400 hover:text-white'
-            }`}
+          </div>
+          <NavLink
+            to="/profile"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-white transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
           >
-            <GraduationCap className="w-3.5 h-3.5" />
-            <span>University Programs</span>
-          </button>
+            <User className="w-3.5 h-3.5" />
+            <span>Profile</span>
+          </NavLink>
         </div>
       </div>
 
@@ -113,7 +101,7 @@ export const DiscoverPage: React.FC = () => {
             <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="What are you looking for? (e.g. Java, Spring Boot, Microservices, University of Tokyo, Tsukuba)"
+              placeholder="What job are you looking for? (e.g. Java, Spring Boot, Microservices, Tokyo)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-[#121522]/90 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 text-sm shadow-inner"
@@ -209,6 +197,13 @@ export const DiscoverPage: React.FC = () => {
       </div>
 
       {/* Opportunity Cards Grid */}
+      {!loading && opportunities.length === 0 && (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
+          <p className="text-white font-semibold">No job opportunities match these filters.</p>
+          <p className="text-sm text-gray-400 mt-2">Clear a filter or search for another skill.</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {opportunities.map((opp) => {
           const isSaved = savedOpportunityIds.includes(opp.id);

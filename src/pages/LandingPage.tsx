@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useStartJourney } from '../hooks/useStartJourney';
 import {
   ArrowRight,
   Sparkles,
@@ -18,6 +19,9 @@ import { KanjiBadge } from '../components/common/KanjiBadge';
 import { AIMentorAvatar } from '../components/mentor/AIMentorAvatar';
 
 export const LandingPage: React.FC = () => {
+  const { startJourney, pending, authReady } = useStartJourney();
+  const journeyDisabled = !authReady || pending;
+
   return (
     <div className="relative min-h-screen bg-[#090A0F] text-gray-100 overflow-x-hidden selection:bg-red-600 selection:text-white">
       {/* Background Cyber-Grid & Ambient Crimson Glow */}
@@ -27,7 +31,7 @@ export const LandingPage: React.FC = () => {
 
       {/* Navigation Header */}
       <header className="relative z-20 max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-        <NavLink to="/" className="flex items-center gap-3.5 group">
+        <NavLink to="/welcome" className="flex items-center gap-3.5 group">
           <MonEmblem size={40} />
           <div>
             <div className="flex items-center gap-2">
@@ -63,13 +67,16 @@ export const LandingPage: React.FC = () => {
           >
             Terminal Access
           </NavLink>
-          <NavLink
-            to="/onboarding"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-600/30 hover:shadow-red-600/50 transition-all"
+          <button
+            type="button"
+            onClick={() => startJourney()}
+            disabled={journeyDisabled}
+            aria-busy={pending}
+            className="relative z-20 flex shrink-0 items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-600/30 hover:shadow-red-600/50 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
           >
-            <span>Start Journey</span>
+            <span>{pending ? 'Checking...' : 'Start Journey'}</span>
             <ArrowRight className="w-4 h-4" />
-          </NavLink>
+          </button>
         </div>
       </header>
 
@@ -100,13 +107,16 @@ export const LandingPage: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-4 pt-2">
-            <NavLink
-              to="/onboarding"
-              className="flex items-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-sm tracking-wide shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all transform hover:-translate-y-0.5"
+            <button
+              type="button"
+              onClick={() => startJourney()}
+              disabled={journeyDisabled}
+              aria-busy={pending}
+              className="relative z-20 flex items-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-60 text-white font-bold text-sm tracking-wide shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
             >
-              <span>Start Your Journey</span>
+              <span>{pending ? 'Checking account...' : 'Start Your Journey'}</span>
               <ArrowRight className="w-5 h-5" />
-            </NavLink>
+            </button>
 
             <NavLink
               to="/dashboard"
@@ -174,7 +184,7 @@ export const LandingPage: React.FC = () => {
               },
               {
                 step: '02',
-                title: 'Discover Matches',
+                title: 'AiMentor',
                 kanji: '探索',
                 desc: 'RAG algorithmic scan across curated Japanese jobs and universities.',
                 icon: Compass,
@@ -283,13 +293,15 @@ export const LandingPage: React.FC = () => {
               </li>
             </ul>
 
-            <NavLink
-              to="/onboarding?mode=job"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-600/30"
+            <button
+              type="button"
+              onClick={() => startJourney('job')}
+              disabled={journeyDisabled}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-600/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
             >
               <span>Explore Career Mode</span>
               <ArrowRight className="w-4 h-4" />
-            </NavLink>
+            </button>
           </div>
 
           {/* University Mode Card */}
@@ -328,13 +340,15 @@ export const LandingPage: React.FC = () => {
               </li>
             </ul>
 
-            <NavLink
-              to="/onboarding?mode=university"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-amber-600/30"
+            <button
+              type="button"
+              onClick={() => startJourney('university')}
+              disabled={journeyDisabled}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-amber-600/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
             >
               <span>Explore University Mode</span>
               <ArrowRight className="w-4 h-4" />
-            </NavLink>
+            </button>
           </div>
         </div>
       </section>

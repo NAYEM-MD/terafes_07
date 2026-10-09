@@ -10,6 +10,7 @@ import {
   GraduationCap,
   CheckCircle2,
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   Calendar,
   ChevronRight,
@@ -23,9 +24,27 @@ import { KanjiBadge } from '../components/common/KanjiBadge';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, goalMode, setSelectedOpportunityId, toggleSaveOpportunity, savedOpportunityIds } = useApp();
+  const {
+    user,
+    goalMode,
+    setSelectedOpportunityId,
+    toggleSaveOpportunity,
+    savedOpportunityIds,
+    authReady,
+    authUser,
+    onboardingCompleted,
+    isLoadingUser,
+    isAccount,
+  } = useApp();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!authReady || isLoadingUser) return;
+    if (authUser && !onboardingCompleted) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [authReady, isLoadingUser, authUser, onboardingCompleted, navigate]);
 
   useEffect(() => {
     async function loadData() {
@@ -45,6 +64,15 @@ export const DashboardPage: React.FC = () => {
     navigate(`/opportunity/${id}`);
   };
 
+  if (!authReady || isLoadingUser || (authUser && !onboardingCompleted)) {
+    return (
+      <div className="py-20 text-center font-mono text-gray-400">
+        <Sparkles className="w-8 h-8 text-red-500 animate-spin mx-auto mb-3" />
+        <div>CHECKING YOUR ACCOUNT...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 text-left">
       {/* Top Welcome Banner with Samurai Aesthetic */}
@@ -53,7 +81,15 @@ export const DashboardPage: React.FC = () => {
         <div className="absolute top-0 right-0 w-80 h-full bg-gradient-to-l from-red-600/10 via-transparent to-transparent pointer-events-none" />
         <div className="absolute -bottom-8 -right-8 w-44 h-44 rounded-full bg-red-600/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col gap-6">
+          <NavLink
+            to="/"
+            className="inline-flex w-fit items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-xs font-mono border border-white/10 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Home</span>
+          </NavLink>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <KanjiBadge kanji="開眼" subtext="Awakening" variant="crimson" />
@@ -62,7 +98,7 @@ export const DashboardPage: React.FC = () => {
               </span>
             </div>
             <h1 className="font-display font-black text-3xl sm:text-4xl text-white tracking-tight">
-              Welcome back, <span className="text-red-500">{user?.name || 'Thushan'}</span>.
+              Welcome back, <span className="text-red-500">{user?.name || 'there'}</span>.
             </h1>
             <p className="text-sm text-gray-300 font-sans max-w-xl">
               "Your path is becoming clearer." The tactical analysis matrix has evaluated 24 target pipelines
@@ -79,15 +115,58 @@ export const DashboardPage: React.FC = () => {
               <span>Launch AI Interview</span>
             </NavLink>
             <NavLink
-              to="/discover"
+              to="/aimentor"
               className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-semibold border border-white/10 transition-colors font-mono"
             >
-              <span>Explore All (24)</span>
+              <span>Open AiMentor</span>
               <ChevronRight className="w-4 h-4" />
             </NavLink>
           </div>
         </div>
+        </div>
       </div>
+
+      <section aria-label="Profile summary" className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <KanjiBadge kanji="武士録" subtext={isAccount ? 'Your Dossier' : 'Sample Dossier'} variant="crimson" />
+              <span className="text-xs font-mono text-gray-400">
+                {isAccount ? 'ACCOUNT PROFILE' : 'SAMPLE PROFILE'}
+              </span>
+            </div>
+            <h2 className="font-display font-bold text-2xl text-white">
+              {user?.name || 'Profile not saved yet'}
+            </h2>
+            <p className="text-sm text-gray-300">
+              {[user?.currentSchool, user?.major, user?.currentLocation].filter(Boolean).join(' · ') ||
+                'School, major, and location appear here after onboarding.'}
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {(user?.skills || []).slice(0, 4).map((skill) => (
+                <span
+                  key={skill.id}
+                  className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-200"
+                >
+                  {skill.name}
+                </span>
+              ))}
+            </div>
+            {!isAccount && (
+              <p className="text-xs text-amber-200/90">
+                This is the sample dossier. Start Your Journey to save a profile to your own account.
+              </p>
+            )}
+          </div>
+          <NavLink
+            to="/profile"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-600/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+          >
+            View and edit profile
+            <ArrowRight className="w-4 h-4" />
+          </NavLink>
+        </div>
+      </section>
 
       {/* 4 KPI Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -295,10 +374,10 @@ export const DashboardPage: React.FC = () => {
                 Recent Opportunities ({opportunities.length})
               </h3>
               <NavLink
-                to="/discover"
+                to="/aimentor"
                 className="text-xs font-mono text-red-400 hover:text-red-300 flex items-center gap-1"
               >
-                <span>View Full Radar</span>
+                <span>Open AiMentor</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </NavLink>
             </div>
@@ -432,7 +511,7 @@ export const DashboardPage: React.FC = () => {
                   desc: 'Review vocational diploma credit transfer prerequisites.',
                   date: 'Next week',
                   urgent: false,
-                  link: '/discover',
+                  link: '/aimentor',
                 },
               ].map((task, i) => (
                 <NavLink

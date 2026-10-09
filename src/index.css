@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #090A0F;
+    --bg-card: #12141C;
+    --ronin-red: #E53935;
+    --ronin-gold: #D4AF37;
+  }
+
+  * {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  body {
+    background-color: #090A0F;
+    color: #E2E8F0;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090A0F;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 57, 53, 0.5);
+}
+
+/* Cyberpunk & Samurai Accents */
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+}
+
+.cyber-grid-red {
+  background-size: 48px 48px;
+  background-image: 
+    linear-gradient(to right, rgba(229, 57, 53, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(229, 57, 53, 0.04) 1px, transparent 1px);
+}
+
+.glass-panel {
+  background: rgba(18, 20, 28, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(229, 57, 53, 0.35);
+  box-shadow: 0 10px 30px -10px rgba(229, 57, 53, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Katana / Mon decorative slash */
+.katana-slash {
+  position: relative;
+  overflow: hidden;
+}
+
+.katana-slash::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, #E53935, transparent);
+}
+
+/* Audio wave animation bars */
+@keyframes soundwave {
+  0%, 100% { height: 6px; }
+  50% { height: 26px; }
+}
+
+.wave-bar {
+  animation: soundwave 1.2s ease-in-out infinite;
+}

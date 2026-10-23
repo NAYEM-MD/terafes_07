@@ -1,0 +1,1 @@
+ALTER TABLE voice_sessions ADD COLUMN language VARCHAR(8) NOT NULL DEFAULT 'ja';

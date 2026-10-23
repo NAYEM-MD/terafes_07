@@ -1,0 +1,21 @@
+# TRON AI Spring Boot — .gitignore
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.classpath
+*.project
+.settings/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

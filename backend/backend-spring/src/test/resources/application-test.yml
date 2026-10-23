@@ -1,0 +1,57 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:tron_ai_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
+      enabled: true
+
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+jwt:
+  secret: test-secret-key-at-least-256-bits-long-32-bytes-testing
+  access-minutes: 15
+  refresh-days: 7
+
+ollama:
+  base-url: http://127.0.0.1:11434
+  model: qwen3:8b
+  timeout-seconds: 5
+
+tron:
+  default-model: qwen3-8b
+
+stt:
+  base-url: http://127.0.0.1:8091
+  timeout-seconds: 5
+
+voicevox:
+  base-url: http://127.0.0.1:50021
+  speaker-id: 13
+  timeout-seconds: 5
+  audio-ttl-seconds: 600
+  max-stored-clips: 20
+
+

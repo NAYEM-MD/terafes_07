@@ -1,0 +1,1 @@
+"""STT worker tests package."""

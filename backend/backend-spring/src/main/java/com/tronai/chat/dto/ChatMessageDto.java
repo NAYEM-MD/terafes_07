@@ -1,0 +1,20 @@
+package com.tronai.chat.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ChatMessageDto {
+    private Long id;
+    private String role;
+    private String content;
+    private String language;
+    private Instant createdAt;
+}

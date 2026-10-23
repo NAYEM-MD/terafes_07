@@ -1,0 +1,202 @@
+# ==============================================================================
+# TRON AI — Spring Boot Backend
+# application.yml  (base / production-safe defaults)
+# ==============================================================================
+# DO NOT put real secrets here. Use environment variables or application-local.yml.
+# ==============================================================================
+
+server:
+  port: ${SERVER_PORT:8080}
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  # Honor Cloudflare and Nginx X-Forwarded-* headers.
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: tron-ai-spring
+
+  # ── Database (MySQL 8) ─────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:tron_ai}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:tronai}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 10000
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  # ── JPA / Hibernate (ddl-auto=validate; Flyway owns schema) ─────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+    show-sql: false
+
+  # ── Flyway Database Migrations ──────────────────────────────────────────────
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ── Jackson / JSON ──────────────────────────────────────────────────────────
+  jackson:
+    default-property-inclusion: non_null
+
+  # ── File Upload / Multipart Configuration ──────────────────────────────────
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
+      enabled: true
+
+  # ── RabbitMQ (Mega Mission 2) ──────────────────────────────────────────────
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    connection-timeout: 2000ms
+
+# ── Spring Boot Actuator ──────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+# ── Ollama / AI Configuration ────────────────────────────────────────────────
+ollama:
+  base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
+  model: ${OLLAMA_MODEL:qwen3:8b}
+  timeout-seconds: ${OLLAMA_TIMEOUT_SECONDS:180}
+  num-ctx: ${OLLAMA_NUM_CTX:4096}
+
+# ── TRON Model Management (Step 4) ───────────────────────────────────────────
+tron:
+  default-model: ${TRON_DEFAULT_MODEL:qwen3-8b}
+  public-api-url: ${TRON_PUBLIC_API_URL:http://localhost:8080}
+  ai:
+    daily-ultra-credits: ${TRON_AI_DAILY_ULTRA_CREDITS:5}
+    ultra-enabled: ${TRON_AI_ULTRA_ENABLED:true}
+    live-provider-smoke-test: ${TRON_AI_LIVE_PROVIDER_SMOKE_TEST:false}
+    groq-api-key: ${GROQ_API_KEY:}
+    openrouter-api-key-1: ${OPENROUTER_API_KEY_1:}
+    openrouter-api-key-2: ${OPENROUTER_API_KEY_2:}
+    mistral-api-key: ${MISTRAL_API_KEY:}
+    cloudflare-api-token: ${CLOUDFLARE_API_TOKEN:}
+    cloudflare-account-id: ${CLOUDFLARE_ACCOUNT_ID:}
+    gemini-api-key-1: ${GEMINI_API_KEY_1:}
+    gemini-api-key-2: ${GEMINI_API_KEY_2:}
+    gemini-api-key-3: ${GEMINI_API_KEY_3:}
+    gemini-api-key-4: ${GEMINI_API_KEY_4:}
+  # V4 hybrid routing / supervisor / agent engines
+  hybrid:
+    ollama-health-url: ${TRON_OLLAMA_HEALTH_URL:http://127.0.0.1:11434/api/tags}
+    rtx-probe-timeout-ms: ${TRON_RTX_PROBE_TIMEOUT_MS:1500}
+  supervisor:
+    local-model: ${TRON_SUPERVISOR_LOCAL_MODEL:qwen3:8b}
+  agent:
+    opencode:
+      # V4-C: Spring must NOT call Core localhost OpenCode. Execution is via desktop WSS.
+      # Legacy keys retained only for migration notes; OpenCodeAgentEngine ignores them.
+      base-url: ${TRON_OPENCODE_BASE_URL:}
+      password: ${TRON_OPENCODE_PASSWORD:}
+      reject-core-workspace: true
+    openclaw:
+      enabled: ${TRON_OPENCLAW_ENABLED:true}
+      gateway-url: ${TRON_OPENCLAW_GATEWAY_URL:}
+      gateway-token: ${TRON_OPENCLAW_GATEWAY_TOKEN:}
+
+# ── Desktop agent control plane ───────────────────────────────────────────────
+desktop-agent:
+  protocol-version: "1.0"
+  pairing-ttl-seconds: ${DESKTOP_AGENT_PAIRING_TTL:600}
+  heartbeat-timeout-seconds: ${DESKTOP_AGENT_HEARTBEAT_TIMEOUT:45}
+  max-actions-per-task: ${DESKTOP_AGENT_MAX_ACTIONS:50}
+  action-timeout-seconds: ${DESKTOP_AGENT_ACTION_TIMEOUT:180}
+  approval-ttl-seconds: ${DESKTOP_AGENT_APPROVAL_TTL:300}
+  max-file-bytes: ${DESKTOP_AGENT_MAX_FILE_BYTES:1048576}
+
+# ── Speech-to-Text (STT Worker) ───────────────────────────────────────────────
+stt:
+  base-url: ${STT_BASE_URL:http://127.0.0.1:8091}
+  timeout-seconds: ${STT_TIMEOUT_SECONDS:30}
+
+# ── Text-to-Speech (VOICEVOX) ────────────────────────────────────────────────
+tts:
+  multilingual:
+    base-url: ${MULTILINGUAL_TTS_BASE_URL:}
+    timeout-seconds: ${MULTILINGUAL_TTS_TIMEOUT_SECONDS:30}
+
+voicevox:
+  base-url: ${VOICEVOX_BASE_URL:http://127.0.0.1:50021}
+  speaker-id: ${VOICEVOX_SPEAKER_ID:13}
+  timeout-seconds: ${VOICEVOX_TIMEOUT_SECONDS:30}
+  audio-ttl-seconds: ${VOICE_AUDIO_TTL_SECONDS:600}
+  max-stored-clips: ${MAX_STORED_VOICE_CLIPS:20}
+
+
+# ── Springdoc / OpenAPI ───────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+
+# ── Security & JWT (Mega Mission 2) ──────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET:tron-ai-development-only-secret-key-must-be-at-least-256-bits-long-32-bytes}
+  access-minutes: ${JWT_ACCESS_MINUTES:15}
+  refresh-days: ${JWT_REFRESH_DAYS:7}
+
+cookie:
+  secure: ${COOKIE_SECURE:false}
+  same-site: ${COOKIE_SAME_SITE:Lax}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175}
+
+# ── Frontend & Public Core URL ────────────────────────────────────────────────
+frontend:
+  url: ${TRON_FRONTEND_URL:http://localhost:5174}
+
+# ── OAuth2 / Google Sign-In (Environment Variables Only) ──────────────────────
+oauth2:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}
+
+# ── Desktop Agent Distribution ────────────────────────────────────────────────
+desktop-download:
+  windows-url: ${TRON_DESKTOP_DOWNLOAD_WINDOWS_URL:}
+
+# Cloud fallback is off unless CLOUD_AI_ENABLED=true. Never put a real key here.
+cloud:
+  ai:
+    enabled: ${CLOUD_AI_ENABLED:false}
+    provider: ${CLOUD_AI_PROVIDER:}
+    api-key: ${CLOUD_AI_API_KEY:}
+    base-url: ${CLOUD_AI_BASE_URL:}
+    model-fast: ${CLOUD_AI_MODEL_FAST:}
+    model-quality: ${CLOUD_AI_MODEL_QUALITY:}
+
+# ── MinIO Object Storage (Mega Mission 2) ────────────────────────────────────
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:tron-ai-private}
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    com.tronai: DEBUG

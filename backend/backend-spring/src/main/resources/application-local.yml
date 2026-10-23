@@ -1,0 +1,46 @@
+# ==============================================================================
+# TRON AI — Spring Boot Backend
+# application-local.yml  (local developer overrides)
+# ==============================================================================
+# USAGE: Start the app with:  --spring.profiles.active=local
+# This file is git-ignored and safe for developer secrets.
+# ==============================================================================
+
+server:
+  address: 127.0.0.1
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:tron_ai}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:tronai}
+    password: ${DB_PASSWORD:tronai_pass}
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+# RabbitMQ / MinIO are optional for local chat/auth/agent. Do not fail
+# /actuator/health (503) when they are not running — Start-Tron gates on health.
+management:
+  health:
+    rabbit:
+      enabled: false
+  endpoint:
+    health:
+      # Prefer group probes for readiness; overall stays UP without Rabbit.
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+
+logging:
+  level:
+    root: INFO
+    com.tronai: DEBUG
